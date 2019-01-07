@@ -41,6 +41,7 @@ along with LeMonADE.  If not, see <http://www.gnu.org/licenses/>.
 #include <LeMonADE/updater/UpdaterAbstractCreate.h>
 #include <LeMonADE/utility/Vector3D.h>
 
+
 template<class IngredientsType>
 class UpdaterCreateChainInSlit: public UpdaterAbstractCreate<IngredientsType>
 {
@@ -58,6 +59,11 @@ public:
   virtual void initialize();
   virtual bool execute();
   virtual void cleanup();
+
+  //! getter for initialised bool
+  const bool getIsInitialized() const { return isInitialized;}
+  //! getter for number of executions
+  const int32_t getIsExecuted() const { return isExecuted;}
   
 private:
   // provide access to functions of UpdaterAbstractCreate used in this updater
@@ -66,6 +72,9 @@ private:
   using BaseClass::addMonomerInsideConnectedPair;
   using BaseClass::addSingleMonomer;
   using BaseClass::linearizeSystem;
+
+  // static instance of rng
+  RandomNumberGenerators rng;
   
   //! number of monomers in a chain
   uint32_t chainLength;
@@ -104,8 +113,8 @@ private:
 * @param distanceFixpointWall_ distance between fixpoint of chain end (FIXED_AT_WALL_AND_IN_SPACE) and wall
 */
 template < class IngredientsType >
-UpdaterCreateChainInSlit<IngredientsType>::UpdaterCreateChainInSlit(IngredientsType& ingredients_, uint32_t chainLength_, uint32_t slitSize_, uint32_t boxXY_, int fixType_, uint32_t distanceFixpointWall_=0):
-BaseClass(ingredients_), chainLength(chainLength_), slitSize(slitSize_), boxXY(boxXY_), fixType(fixType_),distanceFixpointWall(distanceFixpointWall_)
+UpdaterCreateChainInSlit<IngredientsType>::UpdaterCreateChainInSlit(IngredientsType& ingredients_, uint32_t chainLength_, uint32_t slitSize_, uint32_t boxXY_, int fixType_, uint32_t distanceFixpointWall_):
+BaseClass(ingredients_), chainLength(chainLength_), slitSize(slitSize_), boxXY(boxXY_), fixType(fixType_),distanceFixpointWall(distanceFixpointWall_),
 isInitialized(false), isExecuted(false)
 {}
 
@@ -129,8 +138,8 @@ void UpdaterCreateChainInSlit<IngredientsType>::initialize(){
     // add the flexible wall
     if(ingredients.getBoxZ()!=slitSize){
       Wall slitSizedWall;
-      wallUp.setBase(0,0,slitSize);
-      wallUp.setNormal(0,0,1);
+      slitSizedWall.setBase(0,0,slitSize);
+      slitSizedWall.setNormal(0,0,1);
       ingredients.addWall(slitSizedWall);
     }
     
@@ -143,10 +152,11 @@ void UpdaterCreateChainInSlit<IngredientsType>::initialize(){
     ingredients.modifyBondset().addBFMclassicBondset();
 
     // check parameters
-    if ( (3*chainLength) < (slitSize-1) ){
+    if ( (3*chainLength) < (slitSize-1) && (fixType != 0) ){
       throw std::runtime_error("UpdaterCreateChainInSlit: chain length is too short for slit size");
     }
 
+    ingredients.synchronize();
     isInitialized=true;
   }
   
@@ -165,34 +175,60 @@ bool UpdaterCreateChainInSlit<IngredientsType>::execute(){
   
   // start with first monomer at (0,0,0)
   addMonomerAtPosition(VectorInt3(0,0,0));
+  ingredients.modifyMolecules()[0].setMovableTag(false);
 
-  // stack with (0,0,3) until wall
-  int32_t sizeStack(slitSize/3);
+  // check if setup is completed
+  if(ingredients.getMolecules().size() == chainLength){
+    ingredients.synchronize();
+    isExecuted=true;
+    return true;
+  }
+
+  // stack with (0,0,2) until wall
+  int32_t sizeStack((slitSize-2)/2);
+  if(sizeStack > (chainLength-1) ){
+    sizeStack = chainLength-1;
+  }
+
   for(uint32_t i=0; i<sizeStack; i++){
-    addMonomerAtPosition(VectorInt3(0,0,3*i));
+    //std::cout << i<<":"<<2*(i+1)<<"("<<slitSize<<")"<<std::endl;
+    addMonomerAtPosition(VectorInt3(0,0,2*(i+1)));
     ingredients.modifyMolecules().connect(ingredients.getMolecules().size()-2,ingredients.getMolecules().size()-1);
-  }
-  int32_t lastStep((slitSize-1)%3);
-  switch (lastStep){
-    case 0: break;
-    case 1: {
-              ingredients.modifyMolecules().[ingredients.getMolecules().size()-1] + VectorInt3(0,0,-1);
-            }
-    case 2: {
-              addMonomerAtPosition(VectorInt3(0,0,3*slitSize+2));
-              ingredients.modifyMolecules().connect(ingredients.getMolecules().size()-2,ingredients.getMolecules().size()-1);
-              break;
-            }
+    // last monomer:
+    if( (2*(i+1)) == (slitSize-2) && (fixType != 0) ){
+      ingredients.modifyMolecules()[ingredients.getMolecules().size()-1].setMovableTag(false);
+    }
+    if( (2*(i+1)) == (slitSize-3) && (fixType != 0) ){
+      ingredients.modifyMolecules()[ingredients.getMolecules().size()-1].setAllCoordinates(0,0,2*(i+1)+1);
+      ingredients.modifyMolecules()[ingredients.getMolecules().size()-1].setMovableTag(false);
+    }
   }
 
-  // add remaining monomers
-  int32_t numOfRemainingMonos(chainLength-ingredients.getMolecules().size());
-  for(int32_t i=0; i<numOfRemainingMonos; i++){
-    int32_t mono( rng.r250_rand32() % (ingredients.getMolecules().size()-2)+1 );
-    addMonomerInsideConnectedPair(mono,ingredients.getMolecules().getNeighborIndex(mono,1));
+  // check if setup is completed
+  if(ingredients.getMolecules().size() == chainLength){
+    ingredients.synchronize();
+    isExecuted=true;
+    return true;
   }
   
+  // add remaining monomers
+  ingredients.synchronize();
+  int32_t numOfRemainingMonos(chainLength-ingredients.getMolecules().size());
+  for(int32_t i=0; i<numOfRemainingMonos; i++){
+    int32_t mono( ingredients.getMolecules().size()/2 );
+    
+    if(mono>0){
+      addMonomerInsideConnectedPair(mono,ingredients.getMolecules().getNeighborIdx(mono,0)) ? : throw std::runtime_error("UpdaterCreateChainInSlit: addMonomerInsideConnectedPair is not able to place a monomer!");
+    }else{
+      addMonomerInsideConnectedPair(mono,ingredients.getMolecules().getNeighborIdx(mono,1)) ? : throw std::runtime_error("UpdaterCreateChainInSlit: addMonomerInsideConnectedPair is not able to place a monomer!");
+    }
+  }
+  
+  // reorder monomer ids and synchronize
   linearizeSystem();
+  ingredients.synchronize();
+
+  isExecuted=true;
 }
 
 /**
@@ -211,7 +247,7 @@ void UpdaterCreateChainInSlit<IngredientsType>::cleanup(){
 * @tparam IngredientsType Features used in the system. See Ingredients.
 */
 template < class IngredientsType >
-inline void UpdaterCreateChainInSlit<IngredientsType>::pow2roundup(int x){
+inline int32_t UpdaterCreateChainInSlit<IngredientsType>::pow2roundup(int32_t x){
     if (x < 0)
         return 0;
     --x;
