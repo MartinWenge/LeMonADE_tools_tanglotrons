@@ -264,3 +264,88 @@ TEST_CASE( "UpdaterCreateChainInSlit_doubleFixedStrand_chainLong" ) {
     CHECK( ingredients.getMolecules()[10].getMovableTag() == true);
     CHECK( ingredients.getMolecules()[11].getMovableTag() == false);
 }
+
+TEST_CASE( "UpdaterCreateChainInSlit_inSpaceFixedChain_chainShort" ) {
+    RandomNumberGenerators randomNumbers;
+    randomNumbers.seedAll();
+
+    IngredientsType ingredients;
+
+    // UpdaterCreateChainInSlit(IngredientsType& ingredients_, uint32_t chainLength_, uint32_t slitSize_, uint32_t boxXY_, int fixType_, uint32_t distanceFixpointWall_=0);
+    // SINGLE_FIXPOINT_BOTTOM=0,    DOUBLE_FIXED_AT_WALLS=1,    FIXED_AT_WALL_AND_IN_SPACE=2
+    UpdaterCreateChainInSlit<IngredientsType> Primus(ingredients, 4, 16, 16, UpdaterCreateChainInSlit<IngredientsType>::FIXED_AT_WALL_AND_IN_SPACE, 9);
+
+    CHECK(Primus.getIsInitialized()==false);
+    CHECK(Primus.getIsExecuted()==false);
+
+    Primus.initialize();
+    CHECK(Primus.getIsInitialized()==true);
+    CHECK(Primus.getIsExecuted()==true);
+
+    CHECK(ingredients.getMolecules().size() == 4);
+    CHECK(ingredients.isPeriodicX());
+    CHECK(ingredients.isPeriodicY());
+    CHECK(!ingredients.isPeriodicZ());
+
+    CHECK(ingredients.getBoxX()==16);
+    CHECK(ingredients.getBoxY()==16);
+    CHECK(ingredients.getBoxZ()==16);
+
+    CHECK(ingredients.getWalls().size()==0);
+
+    for(uint32_t i=0;i<ingredients.getMolecules().size()-1;i++){
+        CHECK(ingredients.getMolecules().areConnected(i, i+1));
+    }
+    CHECK( ingredients.getMolecules()[0] == VectorInt3(0,0,0) );
+    CHECK( ingredients.getMolecules()[1] == VectorInt3(0,0,2) );
+    CHECK( ingredients.getMolecules()[2] == VectorInt3(0,0,4) );
+    CHECK( ingredients.getMolecules()[3] == VectorInt3(0,0,7) );
+    CHECK( ingredients.getMolecules()[0].getMovableTag() == false);
+    CHECK( ingredients.getMolecules()[1].getMovableTag() == true);
+    CHECK( ingredients.getMolecules()[2].getMovableTag() == true);
+    CHECK( ingredients.getMolecules()[3].getMovableTag() == false);
+
+}
+
+
+TEST_CASE( "UpdaterCreateChainInSlit_inSpaceFixedChain_chainLong" ) {
+    RandomNumberGenerators randomNumbers;
+    randomNumbers.seedAll();
+
+    IngredientsType ingredients;
+
+    // UpdaterCreateChainInSlit(IngredientsType& ingredients_, uint32_t chainLength_, uint32_t slitSize_, uint32_t boxXY_, int fixType_, uint32_t distanceFixpointWall_=0);
+    // SINGLE_FIXPOINT_BOTTOM=0,    DOUBLE_FIXED_AT_WALLS=1,    FIXED_AT_WALL_AND_IN_SPACE=2
+    UpdaterCreateChainInSlit<IngredientsType> Primus(ingredients, 20, 16, 16, UpdaterCreateChainInSlit<IngredientsType>::FIXED_AT_WALL_AND_IN_SPACE, 9);
+
+    CHECK(Primus.getIsInitialized()==false);
+    CHECK(Primus.getIsExecuted()==false);
+
+    Primus.initialize();
+    CHECK(Primus.getIsInitialized()==true);
+    CHECK(Primus.getIsExecuted()==true);
+
+    CHECK(ingredients.getMolecules().size() == 20);
+    CHECK(ingredients.isPeriodicX());
+    CHECK(ingredients.isPeriodicY());
+    CHECK(!ingredients.isPeriodicZ());
+
+    CHECK(ingredients.getBoxX()==16);
+    CHECK(ingredients.getBoxY()==16);
+    CHECK(ingredients.getBoxZ()==16);
+
+    CHECK(ingredients.getWalls().size()==0);
+
+    for(uint32_t i=0;i<ingredients.getMolecules().size()-1;i++){
+        CHECK(ingredients.getMolecules().areConnected(i, i+1));
+        if(i==0 || i== 19){
+            CHECK( ingredients.getMolecules()[i].getMovableTag() == false);
+        }else{
+            CHECK( ingredients.getMolecules()[i].getMovableTag() == true);
+        }
+    }
+
+    CHECK( ingredients.getMolecules()[0] == VectorInt3(0,0,0) );
+    CHECK( ingredients.getMolecules()[19] == VectorInt3(0,0,7) );
+    
+}

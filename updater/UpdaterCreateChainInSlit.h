@@ -142,6 +142,11 @@ void UpdaterCreateChainInSlit<IngredientsType>::initialize(){
       slitSizedWall.setNormal(0,0,1);
       ingredients.addWall(slitSizedWall);
     }
+
+    // add the fixpoint in space if needed FIXED_AT_WALL_AND_IN_SPACE
+    if(fixType == FIXED_AT_WALL_AND_IN_SPACE){
+      slitSize=distanceFixpointWall;
+    }
     
     // set periodicity
     ingredients.setPeriodicX(true);
@@ -152,7 +157,7 @@ void UpdaterCreateChainInSlit<IngredientsType>::initialize(){
     ingredients.modifyBondset().addBFMclassicBondset();
 
     // check parameters
-    if ( (3*chainLength) < (slitSize-1) && (fixType != 0) ){
+    if ( (2*chainLength) < (slitSize-1) && (fixType != 0) ){
       throw std::runtime_error("UpdaterCreateChainInSlit: chain length is too short for slit size");
     }
 
