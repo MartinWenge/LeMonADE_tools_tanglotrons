@@ -23,6 +23,6 @@ SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_DEBUG} -O2 -std=c++11")
 SET (CMAKE_C_FLAGS "${CMAKE_C_FLAGS_DEBUG} -O2 ")
 
 ## ###############  test executable  ############# ##
-add_executable(testTanglotron test_main.cpp test_createChainInSlit.cpp)
+add_executable(testTanglotron test_main.cpp test_createChainInSlit.cpp test_analyzerForce.cpp)
 target_link_libraries(testTanglotron LeMonADE ${Boost_LIBRARIES})
 
