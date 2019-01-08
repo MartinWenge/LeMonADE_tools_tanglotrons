@@ -24,7 +24,6 @@ endif()
 find_package( Boost REQUIRED COMPONENTS program_options)
 INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIR} )
 
-
 include_directories (${LEMONADE_INCLUDE_DIR})
 link_directories (${LEMONADE_LIBRARY_DIR})
 
@@ -43,8 +42,8 @@ target_link_libraries(createFixedChainInSlit LeMonADE ${Boost_LIBRARIES})
 
 ## ###############  Simulators ############# ##
 
-#add_executable(SimulatorOneObjectAtWallSpring mainSimulatorDendrimerAtWallSpring.cpp)
-#target_link_libraries(SimulatorOneObjectAtWallSpring LeMonADE ${Boost_LIBRARIES})
+add_executable(SimualtorChainInSlitForce simulatorSlitChain.cpp)
+target_link_libraries(SimualtorChainInSlitForce LeMonADE ${Boost_LIBRARIES})
 
 ## ###############  Modifiers ############# ##
 

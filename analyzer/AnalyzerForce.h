@@ -207,6 +207,7 @@ void AnalyzerForce<IngredientsType>::cleanup()
     //write comments
     std::stringstream comment;
     comment << "# Analyzer force" << std::endl
+            << "# total numer of tries= "<< counterTries<<std::endl
             << "# idxMonomer\tn-\tn+\tlog(n-/n+)";
 
     //write file
