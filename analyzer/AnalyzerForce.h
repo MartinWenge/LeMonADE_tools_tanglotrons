@@ -162,7 +162,7 @@ bool AnalyzerForce<IngredientsType>::execute(){
         
         for(uint32_t i=0; i<idXSelectedMonomers.size(); i++){
             //remove constraints on the monomer
-            forceIngredients.modifyMolecules()[i].setMovableTag(true);
+            forceIngredients.modifyMolecules()[idXSelectedMonomers.at(i)].setMovableTag(true);
 
             MoveLocalSc movePlus;
             movePlus.init(forceIngredients, idXSelectedMonomers.at(i), VectorInt3(0,0,1));

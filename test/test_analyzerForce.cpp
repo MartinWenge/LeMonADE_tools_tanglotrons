@@ -178,6 +178,38 @@ TEST_CASE( "TestAnalyzerForce_execute" ) {
     CHECK(Emil.getCounterMinus().at(1) == 2);
     CHECK(Emil.getCounterTries() == 3);
 
+    // test a small chain out of the box
+    IngredientsType largeIngredients;
+
+    //UpdaterCreateChainInSlit(IngredientsType& ingredients_, uint32_t chainLength_, uint32_t slitSize_, uint32_t boxXY_, int fixType_, uint32_t distanceFixpointWall_=0);
+    UpdaterCreateChainInSlit<IngredientsType> Secundus(largeIngredients, 6, 16, 16, UpdaterCreateChainInSlit<IngredientsType>::FIXED_AT_WALL_AND_IN_SPACE, 12);
+    Secundus.initialize();
+    CHECK(largeIngredients.getMolecules()[0]==VectorInt3(0,0,0));
+    CHECK(largeIngredients.getMolecules()[1]==VectorInt3(0,0,2));
+    CHECK(largeIngredients.getMolecules()[4]==VectorInt3(0,0,8));
+    CHECK(largeIngredients.getMolecules()[5]==VectorInt3(0,0,10));
+
+    CHECK(largeIngredients.getMolecules()[0].getMovableTag()==false);
+    CHECK(largeIngredients.getMolecules()[1].getMovableTag()==true);
+    CHECK(largeIngredients.getMolecules()[4].getMovableTag()==true);
+    CHECK(largeIngredients.getMolecules()[5].getMovableTag()==false);
+
+    AnalyzerForce<IngredientsType> Fabian(largeIngredients, std::vector<uint32_t> {0,5}, 0);
+    REQUIRE(Fabian.getCounterPlus().size() == 2);
+    REQUIRE(Fabian.getCounterMinus().size() == 2);
+    CHECK(Fabian.getCounterTries() == 0);
+    Fabian.initialize();
+    CHECK(Fabian.getCounterPlus().at(0) == 0);
+    CHECK(Fabian.getCounterMinus().at(0) == 1);
+    CHECK(Fabian.getCounterPlus().at(1) == 1);
+    CHECK(Fabian.getCounterMinus().at(1) == 0);
+    CHECK(Fabian.getCounterTries() == 1);
+    Fabian.execute();
+    CHECK(Fabian.getCounterPlus().at(0) == 0);
+    CHECK(Fabian.getCounterMinus().at(0) == 2);
+    CHECK(Fabian.getCounterPlus().at(1) == 2);
+    CHECK(Fabian.getCounterMinus().at(1) == 0);
+    CHECK(Fabian.getCounterTries() == 2);
 
 }
 
